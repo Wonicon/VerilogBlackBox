@@ -90,7 +90,7 @@ class ToChisel {
             return String.format("%s%sval %s = %s(false.B)", indent, indent, p.name, dir);
           }
           else {
-            return String.format("%s%sval %s = %s.U(1.W)", indent, indent, p.name, dir);
+            return String.format("%s%sval %s = %s(%s(1.W))", indent, indent, p.name, dir, init);
           }
         }
         else {
