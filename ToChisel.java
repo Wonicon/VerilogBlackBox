@@ -1,4 +1,8 @@
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class ToChisel {
   private Module module;
@@ -9,15 +13,59 @@ class ToChisel {
     this.module = module;
   }
 
+  private void log(String fmt, Object... args) {
+    System.err.printf(fmt + "\n", args);
+  }
+
+  private RadixPattern[] radixPatterns = {
+      new RadixPattern(Pattern.compile("\\d+'h([0-9a-zA-F]+)"), 16),
+      new RadixPattern(Pattern.compile("\\d+'b([01]+)"), 2),
+      new RadixPattern(Pattern.compile("\\d+'d([0-9]+)"),10),
+      new RadixPattern(Pattern.compile("(\\d+)"), 10)
+  };
+
+  private static class ChiselParam {
+    final String name;
+    final String init;
+    ChiselParam(String name, String init) {
+      this.name = name;
+      this.init = init;
+    }
+  }
+
+  private Stream<ChiselParam> paramFilterMapper(Port param) {
+    if (param.init.isEmpty()) {
+      return Stream.of(new ChiselParam(param.name, param.init));
+    }
+    for (RadixPattern rp : radixPatterns) {
+      Matcher m = rp.pattern.matcher(param.init);
+      if (m.matches()) {
+        return Stream.of(new ChiselParam(param.name, "BigInt(\"" + m.group(1) + "\", " + rp.radix + ")"));
+      }
+    }
+    log("reject parameter assignment due to dependency or complexity: " + param.name + " = " + param.init);
+    return Stream.empty();
+  }
+
+  private String chiselParamFormatter(ChiselParam p) {
+    // Expose parameters by default.
+    return "val " + p.name + ": BigInt" + (p.init.isEmpty() ? "" : (" = " + p.init));
+  }
+
+  private String blackBoxMapFormatter(ChiselParam p) {
+    return String.format("\"%s\" -> %s", p.name, p.name);
+  }
+
   String process() {
     sb.append("class ").append(module.name);
-    if (!module.params.isEmpty()) {
-      String paramList = String.join(", ", module.params.stream().map(p -> p.init.isEmpty() ? p.name : (p.name + ": Int = " + p.init)).collect(Collectors.toList()));
+    List<ChiselParam> params = module.params.stream().flatMap(this::paramFilterMapper).collect(Collectors.toList());
+    if (params.size() > 0) {
+      String paramList = String.join(", ", params.stream().map(this::chiselParamFormatter).collect(Collectors.toList()));
       sb.append("(").append(paramList).append(")");
     }
     sb.append(" extends BlackBox");
-    if (!module.params.isEmpty()) {
-      String mapList = String.join(", ", module.params.stream().map(p -> "\"" + p.name + "\"" + " -> " + "IntParam(" + p.name + ")").collect(Collectors.toList()));
+    if (params.size() > 0) {
+      String mapList = String.join(", ", params.stream().map(this::blackBoxMapFormatter).collect(Collectors.toList()));
       sb.append("(Map(").append(mapList).append("))");
     }
     sb.append(" {\n");

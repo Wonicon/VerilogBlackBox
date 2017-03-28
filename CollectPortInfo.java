@@ -86,8 +86,6 @@ public class CollectPortInfo extends Verilog2001BaseListener {
     if (currType == PortType.PARAMETER) {
       List<Verilog2001Parser.Param_assignmentContext> params = ctx.param_assignment();
       currModule.params.addAll(params.stream()
-          // Parameters depend on other parameters should not get exposed.
-          .filter(p -> !p.constant_expression().getText().matches(".*[a-zA-Z].*"))
           .map(p -> new Port(currType, p.parameter_identifier().getText(), "META", p.constant_expression().getText()))
           .collect(Collectors.toList()));
     }
