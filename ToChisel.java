@@ -80,7 +80,10 @@ class ToChisel {
         String init = (p.init == null || p.init.isEmpty()) ? "UInt" : String.format("(%s).U", p.init);
 
         if (p.width.equals("1")) {
-          if (p.init == null || p.init.isEmpty()) {
+          if (p.isClock()) {
+            return String.format("%s%sval %s = %s(Clock())", indent, indent, p.name, dir);
+          }
+          else if (p.init == null || p.init.isEmpty()) {
             return String.format("%s%sval %s = %s(Bool())", indent, indent, p.name, dir);
           }
           else if (p.init.equals("1")) {

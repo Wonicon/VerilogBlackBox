@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CollectPortInfo extends Verilog2001BaseListener {
@@ -6,7 +7,8 @@ public class CollectPortInfo extends Verilog2001BaseListener {
   private Module currModule = null;
   private PortDir currDir = PortDir.NA;
   private String width = "1";
-  boolean isUnderGlobalParam = false;
+  private boolean isUnderGlobalParam = false;
+  private final HashSet<String> clocks = new HashSet<>();
 
   private void reset() {
     currDir = PortDir.NA;
@@ -17,10 +19,16 @@ public class CollectPortInfo extends Verilog2001BaseListener {
   @Override
   public void enterModule_declaration(Verilog2001Parser.Module_declarationContext ctx) {
     currModule = new Module(ctx.module_identifier().getText());
+    clocks.clear();
   }
 
   @Override
   public void exitModule_declaration(Verilog2001Parser.Module_declarationContext ctx) {
+    currModule.ports.forEach(p -> {
+      if (clocks.contains(p.name)) {
+        p.toClock();
+      }
+    });
     modules.add(currModule);
     currModule = null;
   }
@@ -96,5 +104,15 @@ public class CollectPortInfo extends Verilog2001BaseListener {
   @Override
   public void exitParameter_declaration_(Verilog2001Parser.Parameter_declaration_Context ctx) {
     reset();
+  }
+
+  private static Pattern clockPattern = Pattern.compile(".*clk.*", Pattern.CASE_INSENSITIVE);
+  @Override
+  public void enterEvent_primary(Verilog2001Parser.Event_primaryContext ctx) {
+    String maybeModifier = ctx.getStart().getText();
+    if ((maybeModifier.equals("posedge") || maybeModifier.equals("negedge"))
+        && clockPattern.matcher(ctx.expression().getText()).matches()) {
+      clocks.add(ctx.expression().getText());
+    }
   }
 }
