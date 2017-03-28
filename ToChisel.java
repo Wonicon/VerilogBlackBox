@@ -33,7 +33,7 @@ class ToChisel {
     }
   }
 
-  private Stream<ChiselParam> paramFilterMapper(Port param) {
+  private Stream<ChiselParam> paramFilterMapper(Parameter param) {
     if (param.init.isEmpty()) {
       return Stream.of(new ChiselParam(param.name, param.init));
     }
@@ -73,29 +73,29 @@ class ToChisel {
     sb.append(indent).append("val io = IO(new Bundle {\n");
     if (!module.ports.isEmpty()) {
       String portList = String.join("\n", module.ports.stream().map(p -> {
-        String type = null;
-        if (p.type == PortType.INPUT) type = "Input";
-        else if (p.type == PortType.OUTPUT) type = "Output";
+        String dir = null;
+        if (p.dir == PortDir.INPUT) dir = "Input";
+        else if (p.dir == PortDir.OUTPUT) dir = "Output";
 
         String init = (p.init == null || p.init.isEmpty()) ? "UInt" : String.format("(%s).U", p.init);
 
         if (p.width.equals("1")) {
           if (p.init == null || p.init.isEmpty()) {
-            return String.format("%s%sval %s = %s(Bool())", indent, indent, p.name, type);
+            return String.format("%s%sval %s = %s(Bool())", indent, indent, p.name, dir);
           }
           else if (p.init.equals("1")) {
-            return String.format("%s%sval %s = %s(true.B)", indent, indent, p.name, type);
+            return String.format("%s%sval %s = %s(true.B)", indent, indent, p.name, dir);
           }
           else if (p.init.equals("0")) {
-            return String.format("%s%sval %s = %s(false.B)", indent, indent, p.name, type);
+            return String.format("%s%sval %s = %s(false.B)", indent, indent, p.name, dir);
           }
           else {
-            return String.format("%s%sval %s = %s.U(1.W)", indent, indent, p.name, type);
+            return String.format("%s%sval %s = %s.U(1.W)", indent, indent, p.name, dir);
           }
         }
         else {
           /// TODO remove redundant parentheses.
-          return String.format("%s%sval %s = %s(%s((%s).W))", indent, indent, p.name, type, init, p.width);
+          return String.format("%s%sval %s = %s(%s((%s).W))", indent, indent, p.name, dir, init, p.width);
         }
       }).collect(Collectors.toList()));
       sb.append(portList).append("\n");

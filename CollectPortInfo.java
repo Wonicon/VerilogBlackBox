@@ -4,12 +4,14 @@ import java.util.stream.Collectors;
 public class CollectPortInfo extends Verilog2001BaseListener {
   ArrayList<Module> modules = new ArrayList<>();
   private Module currModule = null;
-  private PortType currType = PortType.NA;
+  private PortDir currDir = PortDir.NA;
   private String width = "1";
+  boolean isUnderGlobalParam = false;
 
   private void reset() {
-    currType = PortType.NA;
+    currDir = PortDir.NA;
     width = "1";
+    isUnderGlobalParam = false;
   }
 
   @Override
@@ -25,7 +27,7 @@ public class CollectPortInfo extends Verilog2001BaseListener {
 
   @Override
   public void enterInout_declaration(Verilog2001Parser.Inout_declarationContext ctx) {
-    currType = PortType.INOUT;
+    currDir = PortDir.INOUT;
   }
 
   @Override
@@ -35,7 +37,7 @@ public class CollectPortInfo extends Verilog2001BaseListener {
 
   @Override
   public void enterInput_declaration(Verilog2001Parser.Input_declarationContext ctx) {
-    currType = PortType.INPUT;
+    currDir = PortDir.INPUT;
   }
 
   @Override
@@ -45,7 +47,7 @@ public class CollectPortInfo extends Verilog2001BaseListener {
 
   @Override
   public void enterOutput_declaration(Verilog2001Parser.Output_declarationContext ctx) {
-    currType = PortType.OUTPUT;
+    currDir = PortDir.OUTPUT;
   }
 
   @Override
@@ -55,14 +57,14 @@ public class CollectPortInfo extends Verilog2001BaseListener {
 
   @Override
   public void enterPort_identifier(Verilog2001Parser.Port_identifierContext ctx) {
-    if (currType != PortType.NA) {
-      currModule.ports.add(new Port(currType, ctx.getText(), width, ""));
+    if (currDir != PortDir.NA) {
+      currModule.ports.add(new Port(currDir, ctx.getText(), width, ""));
     }
   }
 
   @Override
   public void enterRange(Verilog2001Parser.RangeContext ctx) {
-    if (currType != PortType.NA) {  // Guarantee we are in port declaration context.
+    if (currDir != PortDir.NA) {  // Guarantee we are in port declaration context.
       String lsb = ctx.lsb_constant_expression().getText();
       String msb = ctx.msb_constant_expression().getText();
       assert(lsb.equals("0"));  // For the most common case.
@@ -78,15 +80,15 @@ public class CollectPortInfo extends Verilog2001BaseListener {
 
   @Override
   public void enterParameter_declaration_(Verilog2001Parser.Parameter_declaration_Context ctx) {
-    currType = PortType.PARAMETER;
+    isUnderGlobalParam = true;
   }
 
   @Override
   public void enterList_of_param_assignments(Verilog2001Parser.List_of_param_assignmentsContext ctx) {
-    if (currType == PortType.PARAMETER) {
+    if (isUnderGlobalParam) {
       List<Verilog2001Parser.Param_assignmentContext> params = ctx.param_assignment();
       currModule.params.addAll(params.stream()
-          .map(p -> new Port(currType, p.parameter_identifier().getText(), "META", p.constant_expression().getText()))
+          .map(p -> new Parameter(p.parameter_identifier().getText(), p.constant_expression().getText()))
           .collect(Collectors.toList()));
     }
   }
