@@ -53,7 +53,7 @@ class ToChisel {
   }
 
   private String blackBoxMapFormatter(ChiselParam p) {
-    return String.format("\"%s\" -> %s", p.name, p.name);
+    return String.format("\"%s\" -> IntParam(%s)", p.name, p.name);
   }
 
   String process() {
@@ -98,7 +98,7 @@ class ToChisel {
         }
         else {
           /// TODO remove redundant parentheses.
-          return String.format("%s%sval %s = %s(%s((%s).W))", indent, indent, p.name, dir, init, p.width);
+          return String.format("%s%sval %s = %s(%s((%s).toInt.W))", indent, indent, p.name, dir, init, p.width);
         }
       }).collect(Collectors.toList()));
       sb.append(portList).append("\n");
