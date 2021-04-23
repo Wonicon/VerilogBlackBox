@@ -3,20 +3,12 @@
 This tool utilizes ANTLR4 to parse Verilog2001 and collects parameter and port information
 to create a chisel3 `BlackBox` definition, which can be used when hybriding chisel3 and Verilog code.
 
-## How To Build
+## How To Build & Use
 
 ```
 $ # In the project root dir
-$ wget http://www.antlr.org/download/antlr-4.6-complete.jar
-$ java -cp antlr-4.6-complete.jar Verilog2001.g4
-$ javac *.java
-$ java -x .
-```
-
-## How To Use
-
-```
-$ java -cp . Main some.v >> BlackBox.scala
+$ ./gradlew installDist
+$ app/build/install/app/bin/app <path-to-verilog-file>
 ```
 
 ## Limitation
