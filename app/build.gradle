@@ -28,5 +28,5 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'VerilogBlackBox.Main'
+    mainClass = 'VerilogBlackBox.App'
 }

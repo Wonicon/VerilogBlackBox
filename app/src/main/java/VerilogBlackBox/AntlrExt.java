@@ -1,3 +1,5 @@
+package VerilogBlackBox;
+
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;

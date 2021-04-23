@@ -32,6 +32,9 @@
 // COMPILER DIRECTIVES: I converted them to C preproc and preprocessed with gcc -E.
 
 grammar Verilog2001;
+@header {
+    package VerilogBlackBox;
+}
 
 // 1 Source text
 // 1.1 Library source text

@@ -1,3 +1,5 @@
+package VerilogBlackBox;
+
 import java.util.ArrayList;
 
 enum PortDir { INPUT, OUTPUT, INOUT, NA }
